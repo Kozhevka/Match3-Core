@@ -7,6 +7,7 @@ public class Board : MonoBehaviour
     //Attach to 
     [SerializeField] int[,] board;
     [SerializeField] Transform[] blockTr;
+    [SerializeField] Transform cameraTr;
 
     private void Start()
     {
@@ -38,6 +39,9 @@ public class Board : MonoBehaviour
                 b.type = randomBlock;
             }
         }
+        cameraTr.transform.position = new Vector3((sizeX * 0.5f - 0.5f), //first 0.5ff - halfleght, second halfBlock because center of 1st block on (0,0,0)
+                                                    sizeY * 0.5f - 0.5f,
+                                                     -sizeY); //size y because screen 16:9 (height more important height)
     }
     //spawn additional block if someone was destroyed;
     //create pool of block 
