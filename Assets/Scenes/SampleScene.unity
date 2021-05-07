@@ -332,6 +332,7 @@ MonoBehaviour:
   - {fileID: 3826482978030486933, guid: f224c02ebbe5e414a9a6e1049d8e8c43, type: 3}
   - {fileID: 2822436646650662335, guid: 2906bb847c4d4d44f8a3252a6c69b174, type: 3}
   - {fileID: 5649630706522664934, guid: d93f86d10f071a14ea3629415b37cae2, type: 3}
+  cameraTr: {fileID: 963194228}
 --- !u!4 &1418327485
 Transform:
   m_ObjectHideFlags: 0
