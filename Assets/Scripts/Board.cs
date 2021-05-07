@@ -36,7 +36,7 @@ public class Board : MonoBehaviour
                 Block b = block.gameObject.AddComponent<Block>();
                 b.x = x;
                 b.y = y;
-                b.type = randomBlock;
+                b.iD = randomBlock;
             }
         }
         cameraTr.transform.position = new Vector3((sizeX * 0.5f - 0.5f), //first 0.5ff - halfleght, second halfBlock because center of 1st block on (0,0,0)
@@ -46,4 +46,65 @@ public class Board : MonoBehaviour
     //spawn additional block if someone was destroyed;
     //create pool of block 
     // if on start spawn block make match3. destroy them and respawn. or make some spawn algorytm
+
+    private void Update()
+    {
+        if (Block.first && Block.second)
+        {
+            if (CheckIfNeibor()) 
+            {
+                Swap();
+            }
+
+            else
+            {
+                Block.first = null;
+                Block.second = null;
+            }
+
+        }
+    }
+
+    private bool CheckIfNeibor()
+    {
+        Block _first = Block.first.gameObject.GetComponent<Block>();
+        Block _second = Block.second.gameObject.GetComponent<Block>();
+
+        //test
+        if (_first.x - 1 == _second.x && _first.y == _second.y)
+            return true;
+        else if (_first.x + 1 == _second.x && _first.y == _second.y)
+            return true;
+        else if (_first.x == _second.x && _first.y + 1 == _second.y)
+            return true;
+        else if (_first.x == _second.x && _first.y - 1 == _second.y)
+            return true;
+        Debug.Log("Picked not neibor");
+        return false;
+
+    }
+
+    private void Swap()
+    {
+        Block _first = Block.first.gameObject.GetComponent<Block>();
+        Block _second = Block.second.gameObject.GetComponent<Block>();
+
+        Vector3 bootPos = _first.transform.position;
+        int bootX = _first.x;
+        int bootY = _first.y;
+
+        _first.transform.position = _second.transform.position;
+        _second.transform.position = bootPos;
+
+
+        //swap data
+        _first.x = _second.x;
+        _first.y = _second.y;
+
+        _second.x = bootX;
+        _second.y = bootX;
+
+        board[_first.x, _first.y] = _first.iD;
+        board[_second.x, _second.y] = _second.iD;
+    }
 }
