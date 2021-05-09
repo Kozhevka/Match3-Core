@@ -16,9 +16,12 @@ public class BlockData : MonoBehaviour
     public static Transform first;
     public static Transform second;
 
+    private GameObject targetLight;
+
     private void Start()
     {
         sampleCell = BoardMatch3.instance.sampleOfBlockCell;
+        targetLight = BoardMatch3.instance.targetLight;
 
         passiveScale = transform.localScale;
         activeScale = sampleCell.transform.localScale;
@@ -34,6 +37,8 @@ public class BlockData : MonoBehaviour
             {
                 first = transform;
 
+                targetLight.transform.position = this.transform.position;
+                targetLight.SetActive(true);
             }
             else if (first != transform && second == null)
             {

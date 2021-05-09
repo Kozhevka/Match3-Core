@@ -10,9 +10,12 @@ public class BoardMatch3 : MonoBehaviour
     [SerializeField] private int[,] board;
     [SerializeField] private Vector3[,] onBoardPositions;
 
+    [SerializeField] private GameObject cameraObj;
+
     [SerializeField] private GameObject[] blocksObj;
 
     public BoxCollider sampleOfBlockCell;
+    public GameObject targetLight;
     private float cellHeight;
     private float cellWight;
 
@@ -34,6 +37,22 @@ public class BoardMatch3 : MonoBehaviour
         cellWight = sampleOfBlockCell.size.x;
 
         CreateDesk(9, 9);
+    }
+
+
+    private void Update()
+    {
+        if (BlockData.first && BlockData.second) //if exist
+        {
+            if (CheckDidNeibor())
+            {
+                Swap();
+            }
+            else
+            {
+                UnpickBlocks();
+            }
+        }
     }
 
     private void CreateDesk(int sizeX, int sizeY)
@@ -63,5 +82,67 @@ public class BoardMatch3 : MonoBehaviour
                 
             }
         }
+        CameraPosition(sizeX, sizeY);
+    }
+
+    private void CameraPosition(int sizeX, int sizeY)
+    {
+        cameraObj.transform.position = new Vector3((sizeX * (0.5f * cellWight) - (0.5f * cellWight)), //first 0.5ff - halfleght, second halfBlock because center of 1st block on (0,0,0)
+                                                    sizeY * (0.5f * cellHeight) - (0.5f * cellHeight),
+                                                     -sizeY); //size y because screen 16:9 (height more important height)
+    }
+
+    private bool CheckDidNeibor()
+    {
+        BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+        BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
+        //Direction test
+
+        if (frst.x - 1 == scnd.x && frst.y == scnd.y)
+            return true; //Left
+        else if (frst.x + 1 == scnd.x && frst.y == scnd.y)
+            return true; // Right
+        else if (frst.x == scnd.x && frst.y - 1 == scnd.y)
+            return true; // Down
+        else if (frst.x == scnd.x && frst.y + 1  == scnd.y)
+            return true; // Up
+        Debug.Log("Block not neibor");
+        return false;
+    }
+
+    private void Swap()
+    {
+        BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+        BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
+
+        //boot first pos
+        Vector3 bootPos = frst.transform.position;
+        int bootX = frst.x;
+        int bootY = frst.y;
+
+        frst.transform.position = scnd.transform.position;
+        scnd.transform.position = bootPos;
+
+        // first data same as second
+        frst.x = scnd.x;
+        frst.y = scnd.y;
+
+        //second data same as boot
+        scnd.x = bootX;
+        scnd.y = bootY;
+
+        //block type on board data;
+        board[frst.x, frst.y] = frst.type;
+        board[scnd.x, scnd.y] = scnd.type;
+
+        UnpickBlocks();
+    }
+
+    private void UnpickBlocks()
+    {
+        BlockData.first = null;
+        BlockData.second = null;
+        targetLight.SetActive(false);
     }
 }
+
