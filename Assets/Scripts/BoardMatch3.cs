@@ -6,6 +6,13 @@ public class BoardMatch3 : MonoBehaviour
 {
     public static BoardMatch3 instance;
 
+    private enum MoveStageEnum
+    {
+        Menu,
+        PlayerMakeMove,
+        BlocksMoving
+    }
+    private MoveStageEnum movePhaseEnum;
 
     [SerializeField] private int[,] board;
     [SerializeField] private Vector3[,] onBoardPositions;
@@ -22,6 +29,8 @@ public class BoardMatch3 : MonoBehaviour
     [SerializeField] private int deskSizeX;
     [SerializeField] private int deskSixeY;
 
+    [SerializeField] private float moveTime = 1;
+
     private void Awake()
     {
         if (BoardMatch3.instance == null)
@@ -35,6 +44,7 @@ public class BoardMatch3 : MonoBehaviour
 
     private void Start()
     {
+        movePhaseEnum = MoveStageEnum.BlocksMoving;
         cellHeight = sampleOfBlockCell.size.y;
         cellWight = sampleOfBlockCell.size.x;
 
@@ -44,24 +54,29 @@ public class BoardMatch3 : MonoBehaviour
 
     private void Update()
     {
-        if (BlockData.first && BlockData.second) //if exist
+        if (BlockData.first && BlockData.second && movePhaseEnum == MoveStageEnum.PlayerMakeMove) //if exist
         {
+            BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+            BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
             if (CheckDidNeibor())
             {
-                Swap();
-                BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
-                BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
-                if (CheckMatch(scnd))
-                {
-                    UnpickBlocks();
-                }
-                if (CheckMatch(frst))
-                    UnpickBlocks();
-                else
-                {
-                    Swap();
-                    UnpickBlocks();
-                }
+                 Swap(frst, scnd);
+                 //BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
+                 //BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+
+
+                 StartCoroutine(WaitForFinishMove());
+                 //if (CheckMatch(scnd))
+                 //    UnpickBlocks();
+                 //
+                 //if (CheckMatch(frst))
+                 //    UnpickBlocks();
+                 //
+                 
+                 //Swap();
+                 //UnpickBlocks();
+                 
+                
             }
             else
             {
@@ -98,6 +113,7 @@ public class BoardMatch3 : MonoBehaviour
             }
         }
         CameraPosition(sizeX, sizeY);
+        movePhaseEnum = MoveStageEnum.PlayerMakeMove;
     }
 
     private void CameraPosition(int sizeX, int sizeY)
@@ -125,18 +141,21 @@ public class BoardMatch3 : MonoBehaviour
         return false;
     }
 
-    private void Swap()
+    private bool Swap(BlockData frst, BlockData scnd)
     {
-        BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
-        BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
+        movePhaseEnum = MoveStageEnum.BlocksMoving;
+        //BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+        //BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
 
         //boot first pos
         Vector3 bootPos = frst.transform.position;
         int bootX = frst.x;
         int bootY = frst.y;
 
-        frst.transform.position = scnd.transform.position;
-        scnd.transform.position = bootPos;
+        StartCoroutine(MoveBlockToNextPosition(frst.transform, scnd.transform.position));
+        StartCoroutine(MoveBlockToNextPosition(scnd.transform, bootPos));
+        //frst.transform.position = scnd.transform.position;
+        //scnd.transform.position = bootPos;
 
         // first data same as second
         frst.x = scnd.x;
@@ -149,8 +168,9 @@ public class BoardMatch3 : MonoBehaviour
         //block type on board data;
         board[frst.x, frst.y] = frst.type;
         board[scnd.x, scnd.y] = scnd.type;
+
+        return true;
         
-        //UnpickBlocks();
     }
 
     private void UnpickBlocks()
@@ -158,6 +178,7 @@ public class BoardMatch3 : MonoBehaviour
         BlockData.first = null;
         BlockData.second = null;
         targetLight.SetActive(false);
+        movePhaseEnum = MoveStageEnum.PlayerMakeMove;
     }
 
     private bool CheckMatch(BlockData block)
@@ -169,10 +190,9 @@ public class BoardMatch3 : MonoBehaviour
 
         //check horizontal
         //right
-        for (int rightDir = block.x + 1; rightDir <= deskSizeX; rightDir++) 
+        for (int rightDir = block.x + 1; rightDir < deskSizeX; rightDir++) 
         {
-            if (rightDir >= deskSizeX) // for protect board[] out from array
-                break;
+           
 
             if (board[rightDir, block.y] == block.type)
             {
@@ -184,8 +204,7 @@ public class BoardMatch3 : MonoBehaviour
         //left
         for (int leftDir = block.x - 1; leftDir >= 0; leftDir--)
         {
-            if (leftDir < 0) 
-                break;
+            
 
             if (board[leftDir, block.y] == block.type)
             {
@@ -197,10 +216,9 @@ public class BoardMatch3 : MonoBehaviour
 
         //check vertical
         //up
-        for(int upDir = block.y + 1; upDir <= deskSixeY; upDir++)
+        for(int upDir = block.y + 1; upDir < deskSixeY; upDir++)
         {
-            if (upDir >= deskSixeY)
-                break;
+            
 
             if (board[block.x, upDir] == block.type)
             {
@@ -212,8 +230,7 @@ public class BoardMatch3 : MonoBehaviour
         //down
         for (int downDir = block.y - 1; downDir >= 0; downDir--)
         {
-            if (downDir < 0)
-                break;
+            
 
             if (board[block.x, downDir] == block.type)
             {
@@ -302,6 +319,49 @@ public class BoardMatch3 : MonoBehaviour
     {
         Destroy(blockInfo.gameObject);
         board[blockInfo.x, blockInfo.y] = 100;
+    }
+    private void SmoothMoveBlock(Transform blockObj, Vector3 nextPos)
+    {
+        blockObj.position = Vector3.MoveTowards(blockObj.position, nextPos, moveTime * Time.deltaTime);
+        if (blockObj.position == nextPos)
+        {
+            Debug.Log("moving complete");
+        }
+    }
+
+
+
+    IEnumerator MoveBlockToNextPosition(Transform blockObj, Vector3 nextPos)
+    {
+        if (blockObj)
+        {
+            yield return new WaitForEndOfFrame();
+            SmoothMoveBlock(blockObj, nextPos);
+            if (blockObj.position != nextPos)
+            {
+                StartCoroutine(MoveBlockToNextPosition(blockObj, nextPos));
+            }
+        }
+    }
+
+    IEnumerator WaitForFinishMove()
+    {
+        yield return  new WaitForSeconds(1 / moveTime);
+
+        BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
+        BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+
+
+        if (CheckMatch(scnd))
+            UnpickBlocks();
+
+        if (CheckMatch(frst))
+            UnpickBlocks();
+        else
+        {
+            Swap(frst, scnd);
+            UnpickBlocks();
+        }
     }
 }
 
