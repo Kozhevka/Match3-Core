@@ -322,10 +322,13 @@ public class BoardMatch3 : MonoBehaviour
     }
     private void SmoothMoveBlock(Transform blockObj, Vector3 nextPos)
     {
-        blockObj.position = Vector3.MoveTowards(blockObj.position, nextPos, moveTime * Time.deltaTime);
-        if (blockObj.position == nextPos)
+        if (blockObj)
         {
-            Debug.Log("moving complete");
+            blockObj.position = Vector3.MoveTowards(blockObj.position, nextPos, moveTime * Time.deltaTime);
+            if (blockObj.position == nextPos)
+            {
+                Debug.Log("moving complete");
+            }
         }
     }
 
@@ -333,9 +336,10 @@ public class BoardMatch3 : MonoBehaviour
 
     IEnumerator MoveBlockToNextPosition(Transform blockObj, Vector3 nextPos)
     {
+        
+            yield return new WaitForEndOfFrame();
         if (blockObj)
         {
-            yield return new WaitForEndOfFrame();
             SmoothMoveBlock(blockObj, nextPos);
             if (blockObj.position != nextPos)
             {
