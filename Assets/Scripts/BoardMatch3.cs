@@ -19,6 +19,8 @@ public class BoardMatch3 : MonoBehaviour
     private float cellHeight;
     private float cellWight;
 
+    [SerializeField] private int deskSizeX;
+    [SerializeField] private int deskSixeY;
 
     private void Awake()
     {
@@ -36,7 +38,7 @@ public class BoardMatch3 : MonoBehaviour
         cellHeight = sampleOfBlockCell.size.y;
         cellWight = sampleOfBlockCell.size.x;
 
-        CreateDesk(9, 9);
+        CreateDesk(deskSizeX, deskSixeY);
     }
 
 
@@ -47,6 +49,19 @@ public class BoardMatch3 : MonoBehaviour
             if (CheckDidNeibor())
             {
                 Swap();
+                BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
+                BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
+                if (CheckMatch(scnd))
+                {
+                    UnpickBlocks();
+                }
+                if (CheckMatch(frst))
+                    UnpickBlocks();
+                else
+                {
+                    Swap();
+                    UnpickBlocks();
+                }
             }
             else
             {
@@ -134,8 +149,8 @@ public class BoardMatch3 : MonoBehaviour
         //block type on board data;
         board[frst.x, frst.y] = frst.type;
         board[scnd.x, scnd.y] = scnd.type;
-
-        UnpickBlocks();
+        
+        //UnpickBlocks();
     }
 
     private void UnpickBlocks()
@@ -143,6 +158,150 @@ public class BoardMatch3 : MonoBehaviour
         BlockData.first = null;
         BlockData.second = null;
         targetLight.SetActive(false);
+    }
+
+    private bool CheckMatch(BlockData block)
+    {
+        int countRight = 0;
+        int countLeft = 0;
+        int countUp = 0;
+        int countDown = 0;
+
+        //check horizontal
+        //right
+        for (int rightDir = block.x + 1; rightDir <= deskSizeX; rightDir++) 
+        {
+            if (rightDir >= deskSizeX) // for protect board[] out from array
+                break;
+
+            if (board[rightDir, block.y] == block.type)
+            {
+                countRight++;
+            }
+            else
+                break;
+        }
+        //left
+        for (int leftDir = block.x - 1; leftDir >= 0; leftDir--)
+        {
+            if (leftDir < 0) 
+                break;
+
+            if (board[leftDir, block.y] == block.type)
+            {
+                countLeft++;
+            }
+            else 
+                break;
+        }
+
+        //check vertical
+        //up
+        for(int upDir = block.y + 1; upDir <= deskSixeY; upDir++)
+        {
+            if (upDir >= deskSixeY)
+                break;
+
+            if (board[block.x, upDir] == block.type)
+            {
+                countUp++;
+            }
+            else
+                break;
+        }
+        //down
+        for (int downDir = block.y - 1; downDir >= 0; downDir--)
+        {
+            if (downDir < 0)
+                break;
+
+            if (board[block.x, downDir] == block.type)
+            {
+                countDown++;
+            }
+            else
+                break;
+        }
+
+
+        //destroy block
+        BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
+
+        bool verticalDestroy = false;
+        bool horizontalDestroy = false;
+
+        if (countRight + countLeft >= 2) //+ 1 = 3.  1- its current block
+            horizontalDestroy = true;
+        if (countUp + countDown >= 2)
+            verticalDestroy = true;
+
+        
+        if (horizontalDestroy) 
+        {
+            //right destroy
+            for (int destrRight = 1; destrRight <= countRight; destrRight++)
+            {
+                foreach (BlockData blockData in allBlockData)
+                {
+                    if (blockData.x == block.x + destrRight && blockData.y == block.y)
+                    {
+                        DestroyBlock(blockData);
+                    }
+                }
+            }
+            //left destroy
+            for (int destrLeft = 1; destrLeft <= countLeft; destrLeft++)
+            {
+                foreach (BlockData blockData in allBlockData)
+                {
+                    if (blockData.x == block.x - destrLeft && blockData.y == block.y)
+                    {
+                        DestroyBlock(blockData);
+                    }
+                }
+            }
+        }
+        if (verticalDestroy)
+        {
+            //up destroy
+            for (int destrUp = 1; destrUp <= countUp; destrUp++)
+            {
+                foreach (BlockData blockData in allBlockData)
+                {
+                    if (blockData.x == block.x && blockData.y == block.y + destrUp)
+                    {
+                        DestroyBlock(blockData);
+                    }
+                }
+            }
+            //down destroy
+            for (int destrDown = 1; destrDown <= countDown; destrDown++)
+            {
+                foreach (BlockData blockData in allBlockData)
+                {
+                    if (blockData.x == block.x && blockData.y == block.y - destrDown)
+                    {
+                        DestroyBlock(blockData);
+                    }
+                }
+            }
+        }
+
+        if (horizontalDestroy || verticalDestroy)
+        {
+            DestroyBlock(block); //block activator
+            return true;
+        }
+
+
+        return false;
+    }
+
+
+    private void DestroyBlock(BlockData blockInfo)
+    {
+        Destroy(blockInfo.gameObject);
+        board[blockInfo.x, blockInfo.y] = 100;
     }
 }
 

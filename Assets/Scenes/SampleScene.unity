@@ -474,6 +474,8 @@ MonoBehaviour:
   - {fileID: 4828897934426767506, guid: 2906bb847c4d4d44f8a3252a6c69b174, type: 3}
   sampleOfBlockCell: {fileID: 443567241}
   targetLight: {fileID: 813192183}
+  deskSizeX: 9
+  deskSixeY: 9
 --- !u!4 &1418327485
 Transform:
   m_ObjectHideFlags: 0
