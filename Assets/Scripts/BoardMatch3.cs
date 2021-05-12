@@ -10,8 +10,9 @@ public class BoardMatch3 : MonoBehaviour
     {
         Menu,
         PlayerMakeMove,
-        BlocksMoving
+        BlocksMoving,
     }
+    [SerializeField] private bool blocksMoving;
     private MoveStageEnum movePhaseEnum;
 
     [SerializeField] private int[,] board;
@@ -30,6 +31,9 @@ public class BoardMatch3 : MonoBehaviour
     [SerializeField] private int deskSixeY;
 
     [SerializeField] private float moveTime = 1;
+
+    
+    private int emptyCellType = 100;
 
     private void Awake()
     {
@@ -61,30 +65,16 @@ public class BoardMatch3 : MonoBehaviour
             if (CheckDidNeibor())
             {
                  Swap(frst, scnd);
-                 //BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
-                 //BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
-
-
-                 StartCoroutine(WaitForFinishMove());
-                 //if (CheckMatch(scnd))
-                 //    UnpickBlocks();
-                 //
-                 //if (CheckMatch(frst))
-                 //    UnpickBlocks();
-                 //
-                 
-                 //Swap();
-                 //UnpickBlocks();
-                 
-                
+                 StartCoroutine(WaitForFinishSwap(frst, scnd));
             }
             else
             {
                 UnpickBlocks();
             }
         }
+        
     }
-
+    
     private void CreateDesk(int sizeX, int sizeY)
     {
         board = new int[sizeX, sizeY];
@@ -287,7 +277,7 @@ public class BoardMatch3 : MonoBehaviour
                 {
                     if (blockData.x == block.x && blockData.y == block.y + destrUp)
                     {
-                        DestroyBlock(blockData);
+                       DestroyBlock(blockData);
                     }
                 }
             }
@@ -306,20 +296,23 @@ public class BoardMatch3 : MonoBehaviour
 
         if (horizontalDestroy || verticalDestroy)
         {
+            
             DestroyBlock(block); //block activator
+            movePhaseEnum = MoveStageEnum.BlocksMoving;
             return true;
         }
 
+        
 
         return false;
     }
 
-
     private void DestroyBlock(BlockData blockInfo)
     {
         Destroy(blockInfo.gameObject);
-        board[blockInfo.x, blockInfo.y] = 100;
+        board[blockInfo.x, blockInfo.y] = emptyCellType;
     }
+
     private void SmoothMoveBlock(Transform blockObj, Vector3 nextPos)
     {
         if (blockObj)
@@ -327,17 +320,17 @@ public class BoardMatch3 : MonoBehaviour
             blockObj.position = Vector3.MoveTowards(blockObj.position, nextPos, moveTime * Time.deltaTime);
             if (blockObj.position == nextPos)
             {
-                Debug.Log("moving complete");
+                ///Debug.Log("moving complete");
+                //CheckEmptyCells();
             }
         }
     }
 
-
-
     IEnumerator MoveBlockToNextPosition(Transform blockObj, Vector3 nextPos)
     {
-        
-            yield return new WaitForEndOfFrame();
+        blocksMoving = true;
+        yield return new WaitForEndOfFrame();
+
         if (blockObj)
         {
             SmoothMoveBlock(blockObj, nextPos);
@@ -345,27 +338,88 @@ public class BoardMatch3 : MonoBehaviour
             {
                 StartCoroutine(MoveBlockToNextPosition(blockObj, nextPos));
             }
+            else
+                blocksMoving = false;
+            
         }
     }
 
-    IEnumerator WaitForFinishMove()
+    IEnumerator WaitForFinishSwap(BlockData frst, BlockData scnd)
     {
         yield return  new WaitForSeconds(1 / moveTime);
 
-        BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
-        BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
 
+        bool first = CheckMatch(frst);
+        bool second = CheckMatch(scnd);
 
-        if (CheckMatch(scnd))
+        if (first || second)
+        {
+            MoveBlocksToEmptySpots(FindEmptyCells()); //повторяется 2жды нужно 1 раз
             UnpickBlocks();
-
-        if (CheckMatch(frst))
-            UnpickBlocks();
+        }
         else
         {
             Swap(frst, scnd);
             UnpickBlocks();
         }
+    }
+
+    private List<Vector2> FindEmptyCells()
+    {
+        List<Vector2> emptyCells = new List<Vector2>();
+
+        for (int x = 0; x < deskSizeX; x++)
+        {
+            for (int y = 0; y < deskSixeY; y++)
+            {
+                if (board[x, y] == emptyCellType)
+                {
+                    Vector2 empty = new Vector2(x, y);
+                    emptyCells.Add(empty);
+                }
+            }
+        }
+        return emptyCells;
+    }
+
+    private void MoveBlocksToEmptySpots(List<Vector2> emptySpots)
+    {
+        BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
+        
+        foreach (Vector2 emptyPosition in emptySpots)
+        {
+            int xEmptyPoint = (int)emptyPosition.x;
+            int yEmptyPoint = (int)emptyPosition.y;
+
+            foreach (BlockData blckDta in allBlockData)
+            {
+                if (blckDta.x == xEmptyPoint && blckDta.y > yEmptyPoint)
+                {
+                    Vector2 lowerPosition = blckDta.transform.position + new Vector3(0f, -1f);
+                    ChangeBlockData(blckDta, lowerPosition, emptyPosition);
+                    StartCoroutine(MoveBlockToNextPosition(blckDta.transform, lowerPosition));
+                    
+                }
+                
+            }
+        }
+        Debug.Log($"number empty cells = {emptySpots.Count}");
+        
+    }
+
+    private void ChangeBlockData(BlockData _blockData, Vector2 next, Vector2 _emptyPosition)
+    {
+       // board[_blockData.x, _blockData.y] = emptyCellType; //previous cell shoud be null
+
+        _blockData.x = (int)next.x;
+        _blockData.y = (int)next.y;
+        
+        board[(int)next.x, (int)next.y] = _blockData.type;
+    }
+    
+    private void BlockFallingDown()
+    {
+        
     }
 }
 
