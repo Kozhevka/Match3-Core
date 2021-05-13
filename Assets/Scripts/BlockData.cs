@@ -7,10 +7,9 @@ public class BlockData : MonoBehaviour
     public int type;
     public int x;
     public int y;
-
+    public bool blockMoving = false;
     
     private Vector3 passiveScale;
-    private BoxCollider sampleCell;
     private Vector3 activeScale;
 
     public static Transform first;
@@ -20,11 +19,10 @@ public class BlockData : MonoBehaviour
 
     private void Start()
     {
-        sampleCell = BoardMatch3.instance.sampleOfBlockCell;
         targetLight = BoardMatch3.instance.targetLight;
 
         passiveScale = transform.localScale;
-        activeScale = sampleCell.transform.localScale;
+        activeScale = Vector3.one;
     }
 
     private void OnMouseOver()

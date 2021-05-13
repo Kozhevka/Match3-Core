@@ -16,24 +16,20 @@ public class BoardMatch3 : MonoBehaviour
     private MoveStageEnum movePhaseEnum;
 
     [SerializeField] private int[,] board;
-    [SerializeField] private Vector3[,] onBoardPositions;
 
     [SerializeField] private GameObject cameraObj;
 
     [SerializeField] private GameObject[] blocksObj;
 
-    public BoxCollider sampleOfBlockCell;
     public GameObject targetLight;
-    private float cellHeight;
-    private float cellWight;
 
     [SerializeField] private int deskSizeX;
     [SerializeField] private int deskSixeY;
 
     [SerializeField] private float moveTime = 1;
-
     
-    private int emptyCellType = 100;
+    
+    private readonly int emptyCellType = 100;
 
     private void Awake()
     {
@@ -49,8 +45,6 @@ public class BoardMatch3 : MonoBehaviour
     private void Start()
     {
         movePhaseEnum = MoveStageEnum.BlocksMoving;
-        cellHeight = sampleOfBlockCell.size.y;
-        cellWight = sampleOfBlockCell.size.x;
 
         CreateDesk(deskSizeX, deskSixeY);
     }
@@ -62,10 +56,10 @@ public class BoardMatch3 : MonoBehaviour
         {
             BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
             BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
-            if (CheckDidNeibor())
+            if (CheckDidNeibor(frst, scnd))
             {
                  Swap(frst, scnd);
-                 //StartCoroutine(WaitForFinishSwap(frst, scnd));
+                 StartCoroutine(WaitForFinishSwap(frst, scnd));
             }
             else
             {
@@ -74,31 +68,18 @@ public class BoardMatch3 : MonoBehaviour
         }
         
     }
+
     
+
     private void CreateDesk(int sizeX, int sizeY)
     {
         board = new int[sizeX, sizeY];
-
-        onBoardPositions = new Vector3[sizeX, sizeY];
 
         for (int x = 0; x < board.GetLength(0); x++)
         {
             for (int y = 0; y < board.GetLength(1); y++)
             {
-                onBoardPositions[x, y] = new Vector3(cellHeight * x, cellWight * y, 0);
-
-                int randomBlock = Random.Range(0, blocksObj.Length);
-
-                GameObject block = Instantiate(blocksObj[randomBlock], onBoardPositions[x, y], Quaternion.identity);
-
-                block.transform.parent = this.transform;
-
-                board[x, y] = randomBlock; //set block identification
-
-                BlockData blockInfo = block.gameObject.AddComponent<BlockData>();
-                blockInfo.x = x;
-                blockInfo.y = y;
-                blockInfo.type = randomBlock;
+                SpawnBlockAtPosition(x, y);
                 
             }
         }
@@ -106,19 +87,33 @@ public class BoardMatch3 : MonoBehaviour
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
     }
 
+    private void SpawnBlockAtPosition(int x, int y)
+    {
+        int randomBlock = Random.Range(0, blocksObj.Length);
+
+        GameObject block = Instantiate(blocksObj[randomBlock], new Vector3(x, y, 0f), Quaternion.identity);
+
+        block.transform.parent = this.transform;
+
+        board[x, y] = randomBlock; //set block identification
+
+        BlockData blockInfo = block.gameObject.AddComponent<BlockData>();
+        blockInfo.x = x;
+        blockInfo.y = y;
+        blockInfo.type = randomBlock;
+    }
+
     private void CameraPosition(int sizeX, int sizeY)
     {
-        cameraObj.transform.position = new Vector3((sizeX * (0.5f * cellWight) - (0.5f * cellWight)), //first 0.5ff - halfleght, second halfBlock because center of 1st block on (0,0,0)
-                                                    sizeY * (0.5f * cellHeight) - (0.5f * cellHeight),
+        cameraObj.transform.position = new Vector3((sizeX * 0.5f - 0.5f), //first 0.5ff - halfleght, second halfBlock because center of 1st block on (0,0,0)
+                                                    sizeY * 0.5f - 0.5f,
                                                      -sizeY); //size y because screen 16:9 (height more important height)
     }
 
-    private bool CheckDidNeibor()
+    private bool CheckDidNeibor(BlockData frst, BlockData scnd)
     {
-        BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
-        BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
-        //Direction test
 
+        //Direction test
         if (frst.x - 1 == scnd.x && frst.y == scnd.y)
             return true; //Left
         else if (frst.x + 1 == scnd.x && frst.y == scnd.y)
@@ -127,25 +122,21 @@ public class BoardMatch3 : MonoBehaviour
             return true; // Down
         else if (frst.x == scnd.x && frst.y + 1  == scnd.y)
             return true; // Up
-        Debug.Log("Block not neibor");
+
         return false;
     }
 
     private bool Swap(BlockData frst, BlockData scnd)
     {
         movePhaseEnum = MoveStageEnum.BlocksMoving;
-        //BlockData frst = BlockData.first.gameObject.GetComponent<BlockData>();
-        //BlockData scnd = BlockData.second.gameObject.GetComponent<BlockData>();
-
+        
         //boot first pos
         Vector3 bootPos = frst.transform.position;
         int bootX = frst.x;
         int bootY = frst.y;
 
-       /// StartCoroutine(MoveBlockToNextPosition(frst.transform, scnd.transform.position));
-       // StartCoroutine(MoveBlockToNextPosition(scnd.transform, bootPos));
-        //frst.transform.position = scnd.transform.position;
-        //scnd.transform.position = bootPos;
+        StartCoroutine(MoveBlockToNextPosition(frst, scnd.transform.position));
+        StartCoroutine(MoveBlockToNextPosition(scnd, bootPos));
 
         // first data same as second
         frst.x = scnd.x;
@@ -182,8 +173,6 @@ public class BoardMatch3 : MonoBehaviour
         //right
         for (int rightDir = block.x + 1; rightDir < deskSizeX; rightDir++) 
         {
-           
-
             if (board[rightDir, block.y] == block.type)
             {
                 countRight++;
@@ -194,8 +183,6 @@ public class BoardMatch3 : MonoBehaviour
         //left
         for (int leftDir = block.x - 1; leftDir >= 0; leftDir--)
         {
-            
-
             if (board[leftDir, block.y] == block.type)
             {
                 countLeft++;
@@ -208,8 +195,6 @@ public class BoardMatch3 : MonoBehaviour
         //up
         for(int upDir = block.y + 1; upDir < deskSixeY; upDir++)
         {
-            
-
             if (board[block.x, upDir] == block.type)
             {
                 countUp++;
@@ -220,8 +205,6 @@ public class BoardMatch3 : MonoBehaviour
         //down
         for (int downDir = block.y - 1; downDir >= 0; downDir--)
         {
-            
-
             if (board[block.x, downDir] == block.type)
             {
                 countDown++;
@@ -302,8 +285,6 @@ public class BoardMatch3 : MonoBehaviour
             return true;
         }
 
-        
-
         return false;
     }
 
@@ -313,6 +294,119 @@ public class BoardMatch3 : MonoBehaviour
         board[blockInfo.x, blockInfo.y] = emptyCellType;
     }
 
+    IEnumerator  MoveBlockToNextPosition(BlockData _blockData, Vector3 nextPosition)
+    {
+        _blockData.blockMoving = true;
+
+        while (_blockData && _blockData.transform.position != nextPosition)
+        {
+            yield return new WaitForEndOfFrame();
+            if(_blockData)
+                _blockData.transform.position = Vector3.MoveTowards(_blockData.transform.position, nextPosition, Time.deltaTime / moveTime);
+            _blockData.blockMoving = false;
+        }
+    }
     
+
+    IEnumerator WaitForFinishSwap(BlockData frst, BlockData scnd)
+    {
+        yield return new WaitForSeconds(moveTime);
+
+        bool firstBlock = CheckMatch(frst);
+        bool secondBlock = CheckMatch(scnd);
+
+        if (firstBlock || secondBlock)
+        {
+            UnpickBlocks();
+            MoveAllBlockDown();
+        }
+        else
+        {
+            Swap(frst, scnd);
+            UnpickBlocks();
+        }
+    }
+
+    private void MoveAllBlockDown()
+    {
+        BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
+
+        for (int x = 0; x < deskSizeX; x++)
+        {
+            for (int y = 1; y < deskSixeY; y++) //minus lowest
+            {
+                if (board[x,y] !=emptyCellType && board[x, y-1] == emptyCellType)
+                {
+                    BlockData blockOnXYPosition = null;
+
+                    foreach (BlockData _blockData in allBlockData)
+                    {
+                        if (_blockData.x == x && _blockData.y == y)
+                        {
+                            blockOnXYPosition = _blockData;
+                            break;
+                        }
+                    }
+                    Vector3 loverPosition = new Vector3(x, y - 1, 0f);
+
+                    if (blockOnXYPosition != null)
+                        StartCoroutine(MoveBlockToNextPosition(blockOnXYPosition, loverPosition));
+                    else
+                        Debug.LogError("Cant find _blockData");
+
+                    UpdateBoardCellInfoAfterFall(blockOnXYPosition, loverPosition);
+
+                }
+                
+            }
+        }
+
+        StartCoroutine(WaitForBlockFall());
+        
+    }
+
+    IEnumerator WaitForBlockFall()
+    {
+        yield return new WaitForSeconds(moveTime);
+        SpawnNewBlock();
+
+        bool haveEmptyCell = false;
+
+        for (int x = 0; x < deskSizeX; x++)
+        {
+            for (int y = 1; y < deskSixeY; y++)
+            {
+                if (board[x, y] != emptyCellType && board[x, y - 1] == emptyCellType)
+                {
+                    haveEmptyCell = true;
+                    break;
+                }
+            }
+        }
+        Debug.Log($"WaitForBlock fall = {haveEmptyCell}");
+        if (haveEmptyCell)
+            MoveAllBlockDown();
+    }
+
+    private void UpdateBoardCellInfoAfterFall(BlockData _blockData, Vector2 nextPos)
+    {
+        board[_blockData.x, _blockData.y] = emptyCellType;
+
+        _blockData.x = (int)nextPos.x;
+        _blockData.y = (int)nextPos.y;
+        board[(int)nextPos.x, (int)nextPos.y] = _blockData.type;
+    }
+
+    private void SpawnNewBlock()
+    {
+        for (int x = 0; x < deskSizeX; x++)
+        {
+            if (board[x, deskSixeY-1] == emptyCellType)
+            {
+                SpawnBlockAtPosition(x, deskSixeY-1);
+            }
+        }
+    }
+
 }
 
