@@ -11,6 +11,8 @@ public class BoardMatch3 : MonoBehaviour
         Menu,
         PlayerMakeMove,
         BlocksMoving,
+        DestroyBlock,
+        AfterFallCheck
     }
     [SerializeField] private bool blocksMoving;
     private MoveStageEnum movePhaseEnum;
@@ -31,6 +33,8 @@ public class BoardMatch3 : MonoBehaviour
     
     private readonly int emptyCellType = 100;
 
+    [SerializeField] private List<BlockData> blocksWhatNeedCheck;
+
     private void Awake()
     {
         if (BoardMatch3.instance == null)
@@ -44,7 +48,7 @@ public class BoardMatch3 : MonoBehaviour
 
     private void Start()
     {
-        movePhaseEnum = MoveStageEnum.BlocksMoving;
+        movePhaseEnum = MoveStageEnum.PlayerMakeMove;
 
         CreateDesk(deskSizeX, deskSixeY);
     }
@@ -60,6 +64,7 @@ public class BoardMatch3 : MonoBehaviour
             {
                  Swap(frst, scnd);
                  StartCoroutine(WaitForFinishSwap(frst, scnd));
+
             }
             else
             {
@@ -67,6 +72,43 @@ public class BoardMatch3 : MonoBehaviour
             }
         }
         
+    }
+
+    MoveStageEnum ChangeStageEnum(MoveStageEnum nextStage)
+    {
+        movePhaseEnum = nextStage;
+
+
+        if (movePhaseEnum == MoveStageEnum.BlocksMoving)
+        {
+
+        }
+        if (movePhaseEnum == MoveStageEnum.DestroyBlock)
+        {
+
+        }
+        if (movePhaseEnum == MoveStageEnum.AfterFallCheck)
+        {
+            bool getMatch = false;
+            foreach (BlockData _blockData in blocksWhatNeedCheck)
+            {
+                if(_blockData)
+                    if(CheckMatch(_blockData))
+                {
+                    getMatch = true;
+                }
+            }
+            if (!getMatch)
+            {
+                ChangeStageEnum(MoveStageEnum.PlayerMakeMove);
+                blocksWhatNeedCheck.Clear();
+            }
+            else
+            {
+                MoveAllBlockDown();
+            }
+        }
+        return nextStage;
     }
 
     
@@ -101,6 +143,7 @@ public class BoardMatch3 : MonoBehaviour
         blockInfo.x = x;
         blockInfo.y = y;
         blockInfo.type = randomBlock;
+        blocksWhatNeedCheck.Add(blockInfo);
     }
 
     private void CameraPosition(int sizeX, int sizeY)
@@ -279,9 +322,9 @@ public class BoardMatch3 : MonoBehaviour
 
         if (horizontalDestroy || verticalDestroy)
         {
-            
+            ChangeStageEnum(MoveStageEnum.DestroyBlock);
             DestroyBlock(block); //block activator
-            movePhaseEnum = MoveStageEnum.BlocksMoving;
+            ChangeStageEnum(MoveStageEnum.BlocksMoving);
             return true;
         }
 
@@ -290,8 +333,11 @@ public class BoardMatch3 : MonoBehaviour
 
     private void DestroyBlock(BlockData blockInfo)
     {
-        Destroy(blockInfo.gameObject);
-        board[blockInfo.x, blockInfo.y] = emptyCellType;
+        if (blockInfo)
+        {
+            Destroy(blockInfo.gameObject);
+            board[blockInfo.x, blockInfo.y] = emptyCellType;
+        }
     }
 
     IEnumerator  MoveBlockToNextPosition(BlockData _blockData, Vector3 nextPosition)
@@ -350,7 +396,10 @@ public class BoardMatch3 : MonoBehaviour
                     Vector3 loverPosition = new Vector3(x, y - 1, 0f);
 
                     if (blockOnXYPosition != null)
+                    {
                         StartCoroutine(MoveBlockToNextPosition(blockOnXYPosition, loverPosition));
+                        
+                    }
                     else
                         Debug.LogError("Cant find _blockData");
 
@@ -383,9 +432,14 @@ public class BoardMatch3 : MonoBehaviour
                 }
             }
         }
-        Debug.Log($"WaitForBlock fall = {haveEmptyCell}");
         if (haveEmptyCell)
+        {
             MoveAllBlockDown();
+        }
+        else
+        {
+            ChangeStageEnum(MoveStageEnum.AfterFallCheck);
+        }
     }
 
     private void UpdateBoardCellInfoAfterFall(BlockData _blockData, Vector2 nextPos)
