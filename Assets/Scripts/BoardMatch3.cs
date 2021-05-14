@@ -35,6 +35,11 @@ public class BoardMatch3 : MonoBehaviour
 
     [SerializeField] private List<BlockData> blocksWhatNeedCheck;
 
+    private ScoreCounter scoreCounterScript;
+
+    private int scoreNeedToAdd = 0;
+    private int scoreMultiplier = 1;
+
     private void Awake()
     {
         if (BoardMatch3.instance == null)
@@ -50,6 +55,8 @@ public class BoardMatch3 : MonoBehaviour
     {
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
 
+        scoreCounterScript = ScoreCounter.instance;
+        
         CreateDesk(deskSizeX, deskSixeY);
     }
 
@@ -78,7 +85,11 @@ public class BoardMatch3 : MonoBehaviour
     {
         movePhaseEnum = nextStage;
 
-
+        if(movePhaseEnum == MoveStageEnum.PlayerMakeMove)
+        {
+            scoreMultiplier = 1;
+            scoreCounterScript.AddScore(0, 1);
+        }
         if (movePhaseEnum == MoveStageEnum.BlocksMoving)
         {
 
@@ -90,6 +101,9 @@ public class BoardMatch3 : MonoBehaviour
         if (movePhaseEnum == MoveStageEnum.AfterFallCheck)
         {
             bool getMatch = false;
+
+            
+
             foreach (BlockData _blockData in blocksWhatNeedCheck)
             {
                 if(_blockData)
@@ -97,15 +111,18 @@ public class BoardMatch3 : MonoBehaviour
                 {
                     getMatch = true;
                 }
+                
             }
+            blocksWhatNeedCheck.RemoveAll(BlockData => BlockData == null);
+
             if (!getMatch)
             {
                 ChangeStageEnum(MoveStageEnum.PlayerMakeMove);
-                blocksWhatNeedCheck.Clear();
             }
             else
             {
                 MoveAllBlockDown();
+                AddScoreToScoreCounter();
             }
         }
         return nextStage;
@@ -324,6 +341,7 @@ public class BoardMatch3 : MonoBehaviour
         {
             ChangeStageEnum(MoveStageEnum.DestroyBlock);
             DestroyBlock(block); //block activator
+
             ChangeStageEnum(MoveStageEnum.BlocksMoving);
             return true;
         }
@@ -337,6 +355,7 @@ public class BoardMatch3 : MonoBehaviour
         {
             Destroy(blockInfo.gameObject);
             board[blockInfo.x, blockInfo.y] = emptyCellType;
+            scoreNeedToAdd++;
         }
     }
 
@@ -363,6 +382,7 @@ public class BoardMatch3 : MonoBehaviour
 
         if (firstBlock || secondBlock)
         {
+            AddScoreToScoreCounter();
             UnpickBlocks();
             MoveAllBlockDown();
         }
@@ -460,6 +480,13 @@ public class BoardMatch3 : MonoBehaviour
                 SpawnBlockAtPosition(x, deskSixeY-1);
             }
         }
+    }
+
+    private void AddScoreToScoreCounter()
+    {
+        scoreCounterScript.AddScore(scoreNeedToAdd, scoreMultiplier);
+        scoreNeedToAdd = 0;
+        scoreMultiplier++;
     }
 
 }
