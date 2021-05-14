@@ -775,7 +775,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scoreVievers:
   - {fileID: 59130522}
-  scoreMultipliers: []
+  scoreMultipliers:
+  - {fileID: 312747429}
 --- !u!1 &1424900948
 GameObject:
   m_ObjectHideFlags: 0

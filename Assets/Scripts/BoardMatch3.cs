@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class BoardMatch3 : MonoBehaviour
@@ -26,7 +27,7 @@ public class BoardMatch3 : MonoBehaviour
     public GameObject targetLight;
 
     [SerializeField] private int deskSizeX;
-    [SerializeField] private int deskSixeY;
+    [SerializeField] private int deskSizeY;
 
     [SerializeField] private float moveTime = 1;
     
@@ -39,6 +40,8 @@ public class BoardMatch3 : MonoBehaviour
 
     private int scoreNeedToAdd = 0;
     private int scoreMultiplier = 1;
+
+    
 
     private void Awake()
     {
@@ -54,10 +57,9 @@ public class BoardMatch3 : MonoBehaviour
     private void Start()
     {
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
-
+        //CreateDesk(9,9);
         scoreCounterScript = ScoreCounter.instance;
         
-        CreateDesk(deskSizeX, deskSixeY);
     }
 
 
@@ -138,28 +140,69 @@ public class BoardMatch3 : MonoBehaviour
         {
             for (int y = 0; y < board.GetLength(1); y++)
             {
-                SpawnBlockAtPosition(x, y);
-                
+                int blockType = Random.Range(0, blocksObj.Length);
+                SpawnBlockAtPosition(x, y, blockType);
             }
         }
         CameraPosition(sizeX, sizeY);
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
     }
-
-    private void SpawnBlockAtPosition(int x, int y)
+    public void LoadLevel(TextAsset levelTextAsset)
     {
-        int randomBlock = Random.Range(0, blocksObj.Length);
+        List<string> levelStringData;
+        levelStringData = levelTextAsset.text.Split(';').ToList();
 
-        GameObject block = Instantiate(blocksObj[randomBlock], new Vector3(x, y, 0f), Quaternion.identity);
+        int[] lvlData = new int[levelStringData.Count];
+
+        
+
+        for (int i = 0; i < levelStringData.Count; i++)
+        {
+            if(int.TryParse(levelStringData[i], out int stringInt))
+            {
+                lvlData[i] = stringInt;
+            }
+            else
+            {
+                Debug.LogError($"Not correct levelConfig on {i} string");
+            }
+        }
+        deskSizeX = lvlData[0];
+        deskSizeY = lvlData[1];
+
+        board = new int[deskSizeX, deskSizeY];
+        int blockTypeCount = 2;
+
+        for (int y = deskSizeY-1; y >= 0; y--)//levels load left-right > up-down;
+        {
+            for (int x = 0; x < deskSizeX; x++)
+            {
+                
+                SpawnBlockAtPosition(x, y, lvlData[blockTypeCount]);
+                blockTypeCount++;
+
+            }
+        }
+        CameraPosition(lvlData[0], lvlData[1]);
+        movePhaseEnum = MoveStageEnum.PlayerMakeMove;
+
+
+
+    }
+
+    private void SpawnBlockAtPosition(int x, int y, int type)
+    {
+        Debug.Log($"x={x}, y={y}, type = {type}");
+        GameObject block = Instantiate(blocksObj[type], new Vector3(x, y, 0f), Quaternion.identity);
 
         block.transform.parent = this.transform;
 
-        board[x, y] = randomBlock; //set block identification
+        board[x, y] = type; //set block identification
 
         BlockData blockInfo = block.gameObject.AddComponent<BlockData>();
         blockInfo.x = x;
         blockInfo.y = y;
-        blockInfo.type = randomBlock;
+        blockInfo.type = type;
         blocksWhatNeedCheck.Add(blockInfo);
     }
 
@@ -253,7 +296,7 @@ public class BoardMatch3 : MonoBehaviour
 
         //check vertical
         //up
-        for(int upDir = block.y + 1; upDir < deskSixeY; upDir++)
+        for(int upDir = block.y + 1; upDir < deskSizeY; upDir++)
         {
             if (board[block.x, upDir] == block.type)
             {
@@ -277,6 +320,8 @@ public class BoardMatch3 : MonoBehaviour
         //destroy block
         BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
 
+        int horizontalMatches = countRight + countLeft;
+        int verticalMatches = countUp + countDown;
         bool verticalDestroy = false;
         bool horizontalDestroy = false;
 
@@ -285,6 +330,13 @@ public class BoardMatch3 : MonoBehaviour
         if (countUp + countDown >= 2)
             verticalDestroy = true;
 
+        if (horizontalMatches == 3)
+            FourMatches(block, 'y', allBlockData);
+        if (verticalMatches == 3)
+            FourMatches(block, 'x', allBlockData);
+
+        if (horizontalMatches > 3 || verticalMatches > 3)
+            FiveMatches(block, allBlockData);
         
         if (horizontalDestroy) 
         {
@@ -399,7 +451,7 @@ public class BoardMatch3 : MonoBehaviour
 
         for (int x = 0; x < deskSizeX; x++)
         {
-            for (int y = 1; y < deskSixeY; y++) //minus lowest
+            for (int y = 1; y < deskSizeY; y++) //minus lowest
             {
                 if (board[x,y] !=emptyCellType && board[x, y-1] == emptyCellType)
                 {
@@ -443,7 +495,7 @@ public class BoardMatch3 : MonoBehaviour
 
         for (int x = 0; x < deskSizeX; x++)
         {
-            for (int y = 1; y < deskSixeY; y++)
+            for (int y = 1; y < deskSizeY; y++)
             {
                 if (board[x, y] != emptyCellType && board[x, y - 1] == emptyCellType)
                 {
@@ -475,9 +527,10 @@ public class BoardMatch3 : MonoBehaviour
     {
         for (int x = 0; x < deskSizeX; x++)
         {
-            if (board[x, deskSixeY-1] == emptyCellType)
+            if (board[x, deskSizeY-1] == emptyCellType)
             {
-                SpawnBlockAtPosition(x, deskSixeY-1);
+                int blockType = Random.Range(0, blocksObj.Length);
+                SpawnBlockAtPosition(x, deskSizeY-1, blockType);
             }
         }
     }
@@ -489,5 +542,33 @@ public class BoardMatch3 : MonoBehaviour
         scoreMultiplier++;
     }
 
+    private void FourMatches(BlockData startBlock, char xOrYDirection, BlockData[] allBlocks)
+    {
+        if (xOrYDirection == 'x') //vertical
+        {
+            foreach (BlockData _blockData in allBlocks)
+            {
+                if (_blockData.x == startBlock.x)
+                    DestroyBlock(_blockData);
+            }
+        }
+        else if (xOrYDirection == 'y') //horizontal
+        {
+            foreach (BlockData _blockData in allBlocks)
+            {
+                if (_blockData.y == startBlock.y)
+                    DestroyBlock(_blockData);
+            }
+        }
+    }
+
+    private void FiveMatches(BlockData startBlock, BlockData[] allBlocks)
+    {
+        foreach (BlockData _blockData in allBlocks)
+        {
+            if (_blockData.type == startBlock.type)
+                DestroyBlock(_blockData);
+        }
+    }
 }
 
