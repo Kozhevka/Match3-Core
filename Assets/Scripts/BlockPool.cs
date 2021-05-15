@@ -58,6 +58,7 @@ public class BlockPool : MonoBehaviour
             for (int p = 0; p < minimumAmountToPool; p++)
             {
                 pooledBlock = Instantiate(blockWhatNeedToPool[i]);
+                BlockData blockInfo = pooledBlock.gameObject.AddComponent<BlockData>();
                 pooledBlock.SetActive(false);
                 pooledObjects[i].Add(pooledBlock);
             }
@@ -81,6 +82,7 @@ public class BlockPool : MonoBehaviour
     {
         GameObject additionalBlock;
         additionalBlock = Instantiate(blockWhatNeedToPool[blockType]);
+        BlockData blockInfo = additionalBlock.gameObject.AddComponent<BlockData>();
         additionalBlock.SetActive(false);
         pooledObjects[blockType].Add(additionalBlock);
         return additionalBlock;

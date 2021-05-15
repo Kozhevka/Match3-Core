@@ -207,7 +207,7 @@ public class BoardMatch3 : MonoBehaviour
 
         board[x, y] = type; //set block identification
 
-        BlockData blockInfo = block.gameObject.AddComponent<BlockData>();
+        BlockData blockInfo = block.gameObject.GetComponent<BlockData>();
         blockInfo.x = x;
         blockInfo.y = y;
         blockInfo.type = type;
