@@ -31,6 +31,7 @@ public class ScoreCounter : MonoBehaviour
     public void ResetScore()
     {
         Score = 0;
+        UpdateScoreUI(1);
     }
 
     private void UpdateScoreUI(int combo)

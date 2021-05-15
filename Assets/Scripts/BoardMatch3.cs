@@ -57,7 +57,6 @@ public class BoardMatch3 : MonoBehaviour
     private void Start()
     {
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
-        //CreateDesk(9,9);
         scoreCounterScript = ScoreCounter.instance;
         
     }
@@ -104,12 +103,13 @@ public class BoardMatch3 : MonoBehaviour
         {
             bool getMatch = false;
 
-            
+
+            BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
 
             foreach (BlockData _blockData in blocksWhatNeedCheck)
             {
                 if(_blockData)
-                    if(CheckMatch(_blockData))
+                    if(CheckMatch(_blockData, allBlockData))
                 {
                     getMatch = true;
                 }
@@ -132,8 +132,12 @@ public class BoardMatch3 : MonoBehaviour
 
     
 
-    private void CreateDesk(int sizeX, int sizeY)
+    public void CreateDesk(int sizeX, int sizeY)
     {
+        RemoveBoard();
+
+        deskSizeX = sizeX;
+        deskSizeY = sizeY;
         board = new int[sizeX, sizeY];
 
         for (int x = 0; x < board.GetLength(0); x++)
@@ -149,6 +153,8 @@ public class BoardMatch3 : MonoBehaviour
     }
     public void LoadLevel(TextAsset levelTextAsset)
     {
+        RemoveBoard();
+
         List<string> levelStringData;
         levelStringData = levelTextAsset.text.Split(';').ToList();
 
@@ -192,7 +198,6 @@ public class BoardMatch3 : MonoBehaviour
 
     private void SpawnBlockAtPosition(int x, int y, int type)
     {
-        Debug.Log($"x={x}, y={y}, type = {type}");
         GameObject block = Instantiate(blocksObj[type], new Vector3(x, y, 0f), Quaternion.identity);
 
         block.transform.parent = this.transform;
@@ -265,7 +270,7 @@ public class BoardMatch3 : MonoBehaviour
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
     }
 
-    private bool CheckMatch(BlockData block)
+    private bool CheckMatch(BlockData block, BlockData[] allBlockData)
     {
         int countRight = 0;
         int countLeft = 0;
@@ -318,7 +323,7 @@ public class BoardMatch3 : MonoBehaviour
 
 
         //destroy block
-        BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
+        
 
         int horizontalMatches = countRight + countLeft;
         int verticalMatches = countUp + countDown;
@@ -429,8 +434,9 @@ public class BoardMatch3 : MonoBehaviour
     {
         yield return new WaitForSeconds(moveTime);
 
-        bool firstBlock = CheckMatch(frst);
-        bool secondBlock = CheckMatch(scnd);
+        BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
+        bool firstBlock = CheckMatch(frst, allBlockData);
+        bool secondBlock = CheckMatch(scnd, allBlockData);
 
         if (firstBlock || secondBlock)
         {
@@ -561,7 +567,6 @@ public class BoardMatch3 : MonoBehaviour
             }
         }
     }
-
     private void FiveMatches(BlockData startBlock, BlockData[] allBlocks)
     {
         foreach (BlockData _blockData in allBlocks)
@@ -569,6 +574,25 @@ public class BoardMatch3 : MonoBehaviour
             if (_blockData.type == startBlock.type)
                 DestroyBlock(_blockData);
         }
+    }
+
+    private void RemoveBoard()
+    {
+        blocksWhatNeedCheck.Clear();
+
+        BlockData[] allBlockData = FindObjectsOfType(typeof(BlockData)) as BlockData[];
+        if (allBlockData != null)
+        {
+            foreach (BlockData _blockData in allBlockData)
+            {
+                DestroyBlock(_blockData);
+            }
+        }
+        board = null;
+        
+        scoreNeedToAdd = 0;
+        
+        scoreCounterScript.ResetScore();
     }
 }
 

@@ -6,16 +6,20 @@ public class LevelsHolder : MonoBehaviour
 {
     [SerializeField] private TextAsset[] levelsArray;
 
-    private void Start()
-    {
-        GetLevel(0);
-    }
+    
 
     public void GetLevel(int levelNumber)
     {
         if (levelNumber < levelsArray.Length)
         {
             BoardMatch3.instance.LoadLevel(levelsArray[levelNumber]);
+        }
+    }
+    public void RandomLevel(int sideSize)
+    {
+        if (sideSize < 21 || sideSize > 2) //kinda max size
+        {
+            BoardMatch3.instance.CreateDesk(sideSize, sideSize);
         }
     }
 }
