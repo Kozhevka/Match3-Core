@@ -41,6 +41,7 @@ public class BoardMatch3 : MonoBehaviour
     private int scoreNeedToAdd = 0;
     private int scoreMultiplier = 1;
 
+    private BlockPool blockPoolScript;
     
 
     private void Awake()
@@ -58,6 +59,8 @@ public class BoardMatch3 : MonoBehaviour
     {
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
         scoreCounterScript = ScoreCounter.instance;
+
+        blockPoolScript = BlockPool.instance;
         
     }
 
@@ -198,8 +201,8 @@ public class BoardMatch3 : MonoBehaviour
 
     private void SpawnBlockAtPosition(int x, int y, int type)
     {
-        GameObject block = Instantiate(blocksObj[type], new Vector3(x, y, 0f), Quaternion.identity);
-
+        GameObject block = Instantiate(blockPoolScript.GetPooledBlock(type), new Vector3(x, y, 0f), Quaternion.identity);
+        block.SetActive(true);
         block.transform.parent = this.transform;
 
         board[x, y] = type; //set block identification
@@ -410,8 +413,11 @@ public class BoardMatch3 : MonoBehaviour
     {
         if (blockInfo)
         {
-            Destroy(blockInfo.gameObject);
             board[blockInfo.x, blockInfo.y] = emptyCellType;
+
+            Destroy(blockInfo);
+            blockInfo.gameObject.SetActive(false);
+            
             scoreNeedToAdd++;
         }
     }
