@@ -26,15 +26,16 @@ public class ScoreCounter : MonoBehaviour
     public void AddScore(int additionalScore, int multiplier)
     {
         Score += (additionalScore * multiplier);
-        UpdateScoreUI(multiplier);
+        UpdateScoreUI(multiplier, additionalScore);
     }
+
     public void ResetScore()
     {
         Score = 0;
-        UpdateScoreUI(1);
+        UpdateScoreUI(1, 0);
     }
 
-    private void UpdateScoreUI(int combo)
+    private void UpdateScoreUI(int combo, int additional)
     {
         foreach (TextMeshProUGUI scoreUI in scoreVievers)
         {
@@ -42,7 +43,7 @@ public class ScoreCounter : MonoBehaviour
         }
         foreach (TextMeshProUGUI multiplicatorUI in scoreMultipliers)
         {
-            multiplicatorUI.text = $"X {combo}";
+            multiplicatorUI.text = $"{additional} X {combo}";
         }
     }
 }

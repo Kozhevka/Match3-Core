@@ -7,7 +7,7 @@ public class BoardMatch3 : MonoBehaviour
 {
     public static BoardMatch3 instance;
 
-    private enum MoveStageEnum
+    public enum MoveStageEnum
     {
         Menu,
         PlayerMakeMove,
@@ -15,14 +15,12 @@ public class BoardMatch3 : MonoBehaviour
         DestroyBlock,
         AfterFallCheck
     }
-    [SerializeField] private bool blocksMoving;
+
     private MoveStageEnum movePhaseEnum;
 
     [SerializeField] private int[,] board;
 
     [SerializeField] private GameObject cameraObj;
-
-    [SerializeField] private GameObject[] blocksObj;
 
     public GameObject targetLight;
 
@@ -42,7 +40,7 @@ public class BoardMatch3 : MonoBehaviour
     private int scoreMultiplier = 1;
 
     private BlockPool blockPoolScript;
-    
+    private int blockTypes;
 
     private void Awake()
     {
@@ -61,7 +59,7 @@ public class BoardMatch3 : MonoBehaviour
         scoreCounterScript = ScoreCounter.instance;
 
         blockPoolScript = BlockPool.instance;
-        
+        blockTypes = BlockPool.instance.blockWhatNeedToPool.Count;
     }
 
 
@@ -75,7 +73,6 @@ public class BoardMatch3 : MonoBehaviour
             {
                  Swap(frst, scnd);
                  StartCoroutine(WaitForFinishSwap(frst, scnd));
-
             }
             else
             {
@@ -94,14 +91,7 @@ public class BoardMatch3 : MonoBehaviour
             scoreMultiplier = 1;
             scoreCounterScript.AddScore(0, 1);
         }
-        if (movePhaseEnum == MoveStageEnum.BlocksMoving)
-        {
-
-        }
-        if (movePhaseEnum == MoveStageEnum.DestroyBlock)
-        {
-
-        }
+        
         if (movePhaseEnum == MoveStageEnum.AfterFallCheck)
         {
             bool getMatch = false;
@@ -137,7 +127,7 @@ public class BoardMatch3 : MonoBehaviour
 
     public void CreateDesk(int sizeX, int sizeY)
     {
-        RemoveBoard();
+        RemoveBoard(); //remove previous desk
 
         deskSizeX = sizeX;
         deskSizeY = sizeY;
@@ -147,13 +137,14 @@ public class BoardMatch3 : MonoBehaviour
         {
             for (int y = 0; y < board.GetLength(1); y++)
             {
-                int blockType = Random.Range(0, blocksObj.Length);
+                int blockType = Random.Range(0, blockTypes);
                 SpawnBlockAtPosition(x, y, blockType);
             }
         }
         CameraPosition(sizeX, sizeY);
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
     }
+
     public void LoadLevel(TextAsset levelTextAsset)
     {
         RemoveBoard();
@@ -195,15 +186,12 @@ public class BoardMatch3 : MonoBehaviour
         CameraPosition(lvlData[0], lvlData[1]);
         movePhaseEnum = MoveStageEnum.PlayerMakeMove;
 
-
-
     }
 
     private void SpawnBlockAtPosition(int x, int y, int type)
     {
         GameObject block = Instantiate(blockPoolScript.GetPooledBlock(type), new Vector3(x, y, 0f), Quaternion.identity);
         block.SetActive(true);
-        block.transform.parent = this.transform;
 
         board[x, y] = type; //set block identification
 
@@ -218,12 +206,13 @@ public class BoardMatch3 : MonoBehaviour
     {
         cameraObj.transform.position = new Vector3((sizeX * 0.5f - 0.5f), //first 0.5ff - halfleght, second halfBlock because center of 1st block on (0,0,0)
                                                     sizeY * 0.5f - 0.5f,
-                                                     -sizeY); //size y because screen 16:9 (height more important height)
+                                                     -sizeY); //size y because screen 16:9 (height more important)
     }
 
     private bool CheckDidNeibor(BlockData frst, BlockData scnd)
     {
-
+        if (!frst || !scnd)
+            return false;
         //Direction test
         if (frst.x - 1 == scnd.x && frst.y == scnd.y)
             return true; //Left
@@ -327,7 +316,6 @@ public class BoardMatch3 : MonoBehaviour
 
         //destroy block
         
-
         int horizontalMatches = countRight + countLeft;
         int verticalMatches = countUp + countDown;
         bool verticalDestroy = false;
@@ -371,6 +359,7 @@ public class BoardMatch3 : MonoBehaviour
                 }
             }
         }
+
         if (verticalDestroy)
         {
             //up destroy
@@ -541,7 +530,7 @@ public class BoardMatch3 : MonoBehaviour
         {
             if (board[x, deskSizeY-1] == emptyCellType)
             {
-                int blockType = Random.Range(0, blocksObj.Length);
+                int blockType = Random.Range(0, blockTypes);
                 SpawnBlockAtPosition(x, deskSizeY-1, blockType);
             }
         }

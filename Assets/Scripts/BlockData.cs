@@ -20,8 +20,8 @@ public class BlockData : MonoBehaviour
     private void Start()
     {
         targetLight = BoardMatch3.instance.targetLight;
-
         passiveScale = transform.localScale;
+
         activeScale = Vector3.one;
     }
 

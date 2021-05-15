@@ -18,7 +18,7 @@ public class BlockPool : MonoBehaviour
 
 
     private List<List<GameObject>> pooledObjects;
-    private List<GameObject> blockWhatNeedToPool;
+    public List<GameObject> blockWhatNeedToPool;
 
     private int minimumAmountToPool = 15;
 
@@ -32,17 +32,16 @@ public class BlockPool : MonoBehaviour
             Destroy(this.gameObject);
         }
 
-
-    }
-
-    private void Start()
-    {
         blockWhatNeedToPool = new List<GameObject>();
         blockWhatNeedToPool.Add(blockZero);
         blockWhatNeedToPool.Add(blockOne);
         blockWhatNeedToPool.Add(blockTwo);
         blockWhatNeedToPool.Add(blockThree);
 
+    }
+
+    private void Start()
+    {
         pooledObjects = new List<List<GameObject>>();
         pooledObjects.Add(pooledObjectsZero);
         pooledObjects.Add(pooledObjectsOne);
@@ -57,10 +56,7 @@ public class BlockPool : MonoBehaviour
             GameObject pooledBlock;
             for (int p = 0; p < minimumAmountToPool; p++)
             {
-                pooledBlock = Instantiate(blockWhatNeedToPool[i]);
-                BlockData blockInfo = pooledBlock.gameObject.AddComponent<BlockData>();
-                pooledBlock.SetActive(false);
-                pooledObjects[i].Add(pooledBlock);
+                pooledBlock = CreateBlock(i);
             }
         }
     }
@@ -80,15 +76,25 @@ public class BlockPool : MonoBehaviour
 
     private GameObject AddMoreBlocktoPool(int blockType)
     {
-        GameObject additionalBlock;
-        additionalBlock = Instantiate(blockWhatNeedToPool[blockType]);
-        BlockData blockInfo = additionalBlock.gameObject.AddComponent<BlockData>();
-        additionalBlock.SetActive(false);
-        pooledObjects[blockType].Add(additionalBlock);
-        return additionalBlock;
+        GameObject additionalBlock = CreateBlock(blockType);
+        if (additionalBlock !=null)
+            return additionalBlock;
 
-        Debug.Log($"Cant add block type {blockType}");
+        Debug.LogWarning($"Cant add block type {blockType}");
         return null;
         
+    }
+
+    private GameObject CreateBlock(int blocktype)
+    {
+        GameObject pooledBlock;
+        pooledBlock = Instantiate(blockWhatNeedToPool[blocktype]);
+        pooledBlock.transform.parent = this.transform;
+
+        BlockData blockInfo = pooledBlock.gameObject.AddComponent<BlockData>();
+        pooledBlock.SetActive(false);
+        pooledObjects[blocktype].Add(pooledBlock);
+
+        return pooledBlock;
     }
 }
